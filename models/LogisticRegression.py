@@ -13,7 +13,7 @@ def lr_param_selector():
         penalties = ["l2", "none"]
 
     elif solver == "saga":
-        penalties = ["l1", "l2", "none", "elasticnet"]
+        penalties = ["l1", "l2", "none"]
 
     elif solver == "liblinear":
         penalties = ["l1"]
@@ -23,7 +23,8 @@ def lr_param_selector():
     C = np.round(C, 3)
     max_iter = st.number_input("max_iter", 100, 2000, step=50, value=100)
 
-    params = {"solver": solver, "penalty": penalty, "C": C, "max_iter": max_iter}
+    params = {"solver": solver, "penalty": penalty,
+              "C": C, "max_iter": max_iter}
 
     model = LogisticRegression(**params)
     return model

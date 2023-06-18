@@ -25,16 +25,20 @@ def introduction():
 
     st.markdown(
         """
-    
+    - 🗂️ Choose a dataset
+    - ⚙️ Pick a model and set its hyper-parameters
+    - 📉 Train it and check its performance metrics and decision boundary on train and test data
+    - 🩺 Diagnose possible overitting and experiment with other settings
     -----
     """
     )
 
 
 def dataset_selector():
-    dataset_container = st.sidebar.beta_expander("Configure a dataset", True)
+    dataset_container = st.sidebar.expander("Configure a dataset", True)
     with dataset_container:
-        dataset = st.selectbox("Choose a dataset", ("moons", "circles", "blobs"))
+        dataset = st.selectbox(
+            "Choose a dataset", ("moons", "circles", "blobs"))
         n_samples = st.number_input(
             "Number of samples",
             min_value=50,
@@ -67,7 +71,7 @@ def dataset_selector():
 
 
 def model_selector():
-    model_training_container = st.sidebar.beta_expander("Train a model", True)
+    model_training_container = st.sidebar.expander("Train a model", True)
     with model_training_container:
         model_type = st.selectbox(
             "Choose a model",
@@ -76,7 +80,7 @@ def model_selector():
                 "Decision Tree",
                 "Random Forest",
                 "Gradient Boosting",
-                "Neural Network",
+                # "Neural Network",
                 "K Nearest Neighbors",
                 "Gaussian Naive Bayes",
                 "SVC",
@@ -162,16 +166,96 @@ def generate_snippet(
     return snippet
 
 
+def generate_data_snippet(
+        model, model_type,df, Pre_Selector,encodeing,replaceNull,scale
+):
+    encod=''
+    replaceNan=''
+    scaleing=''
+    if Pre_Selector=="Yes":
+        
+        if encodeing=="Yes":
+            
+            encod=f""">>>def encodeing_df(df):
+        >>>col_name = []
+        >>>label_encoder = LabelEncoder()
+        >>>for (colname, colval) in df.iteritems():
+        >>>    if colval.dtype == 'object':
+        >>>        col_name.append(colname)
+        >>>for col in col_name:
+        >>>    df[col] = label_encoder.fit_transform(df[col])
+        >>>return df
+    >>>df = encodeing_df(df)
+        """
+        if replaceNull=="Yes":
+            replaceNan=f""">>>def replace_null(df):
+        >>>col_nan = []
+        >>>for (colname, colval) in df.iteritems():
+        >>>    if df[colname].isnull().values.any() == True:
+        >>>        col_nan.append(colname)
+        >>>for col in col_nan:
+        >>>    mean_value = df[col].mean()
+        >>>    df[col].fillna(value=mean_value, inplace=True)
+        >>>return df
+    >>>df=replace_null(df)
+        """
+        if scale=='Yes':
+            scaleing=f""">>>def scaling(df):
+        >>>x = df.iloc[:, :-1]  # Using all column except for the last column as X
+        >>>y = df.iloc[:, -1]  # Selecting the last
+        >>>m = x.max() - x.min()
+        >>>m = m.to_dict()
+        >>>l = []
+        >>>for key, val in m.items():
+        >>>    if val == 0:
+        >>>        l.append(key)
+        >>>for i in l:
+        >>>    x = x.drop([i], axis=1)
+        >>>df_norm = (x-x.min())/(x.max()-x.min())
+        >>>df_norm = pd.concat((df_norm, y), 1)
+        >>>return df_norm
+    >>>df=scaling(df)
+            """
+
+    model_text_rep = repr(model)
+    if model_type =='Random Forest ':
+        model_import = model_imports["Random Forest"]
+    else:   
+        model_import = model_imports[model_type]
+        
+
+    snippet = f"""
+    >>> {model_import}
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from sklearn.preprocessing import LabelEncoder
+    >>> from sklearn.tree import {model_type}
+    >>> from sklearn.metrics import accuracy_score, f1_score
+    >>> df = pd.read_csv(Data Frame Path)
+    { encod}
+    { replaceNan}
+    { scaleing}
+    >>>>>> X = df.iloc[:, :-1]
+    >>>>>> Y = df.iloc[:, -1]
+    >>>>>> X_train, X_test, Y_train, Y_test = train_test_split(
+    >>>    X, Y, test_size=(100-split_size)/100)
+    >>> model = {model_text_rep}
+    >>> model.fit(x_train, y_train)
+    >>> y_train_pred = model.predict(x_train)
+    >>> y_test_pred = model.predict(x_test)
+    >>> train_accuracy = accuracy_score(y_train, y_train_pred)
+    >>> test_accuracy = accuracy_score(y_test, y_test_pred)
+    """
+    return snippet
+
+
 def polynomial_degree_selector():
     return st.sidebar.number_input("Highest polynomial degree", 1, 10, 1, 1)
 
 
-def footer():
-    st.sidebar.markdown("---")
-    st.sidebar.markdown(
-        """
-        [<img src='data:image/png;base64,{}' class='img-fluid' width=25 height=25>](https://github.com/ahmedbesbes/playground) <small> Playground 0.1.0 | April 2021</small>""".format(
-            img_to_bytes("./images/github.png")
-        ),
-        unsafe_allow_html=True,
-    )
+def upload_data():
+    with st.sidebar.header('1. Upload your CSV data'):
+        st.sidebar.write('Only classification Dataset Allowed')
+        uploaded_file = st.sidebar.file_uploader(
+            "Upload your input CSV file", type=["csv"])
+    return uploaded_file
